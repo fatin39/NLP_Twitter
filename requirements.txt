@@ -1,0 +1,12 @@
+ystreamlit
+pandas
+plost
+numpy
+plotly
+seaborn
+matplot
+httpx
+python-dateutil
+openpyxl
+scikit-learn
+nltk
