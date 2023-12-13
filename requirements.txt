@@ -1,12 +1,12 @@
-ystreamlit
-pandas
-plost
-numpy
-plotly
-seaborn
-matplot
-httpx
-python-dateutil
-openpyxl
-scikit-learn
-nltk
+# numpy
+# pandas
+# matplot
+# streamlit
+# plost
+# plotly
+# seaborn
+# httpx
+# python-dateutil
+# openpyxl
+# scikit-learn
+# nltk

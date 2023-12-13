@@ -1,75 +1,167 @@
 import streamlit as st
 import pandas as pd
-from visualisation.sentiment_distribution import sentiment_distribution
-#from visualisation.sentiment_distribution import sentiment_distribution_app
-
-# Define the correct file path to the CSV file
-csv_file_path = "/Users/nurfatinaqilah/Documents/streamlit-test/data/sentiment_analysis.csv"
-
-# Read the CSV file with the appropriate encoding
-@st.cache_data  # Cache the data for better performance
-def load_data():
-    df = pd.read_csv(csv_file_path, encoding='latin1')  # Specify the encoding as 'latin1'
-    return df
-
-df = load_data()
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 def app():
-    st.title('Introduction')
-    st.markdown("This is the sentiment140 dataset. It contains around 1,600,000 tweets extracted using the twitter api . The tweets have been annotated (0 = negative, 4 = positive) and they can be used to detect sentiment .")
+    st.title('Dataset')
+    # Function to preprocess and load dataset details
+    def preprocess_and_load_data(dataset_name):
+        if dataset_name == "Sentiment 140":
+            df = pd.read_csv('data/sentiment_analysis.csv', encoding='ISO-8859-1', names=['label', 'ids', 'date', 'flag', 'user', 'text'])
+            df = df[['text', 'label']]
+            df['label'] = df['label'].replace(4, 1)
+        
+        elif dataset_name == "Depressed and Non-Depressed Tweets":
+            depressed_tweets_df = pd.read_csv('data/depressed_tweets.csv')
+            depressed_tweets_df.rename(columns={'tweet': 'text'}, inplace=True)
+            depressed_tweets_df['label'] = 2  # Label for depressed tweets
 
-    # Left Column (Overview)
-    left_column = st.container()
-    with left_column:
-        st.markdown('<div style="border: 1px solid #9AD8E1; border-radius: 10px; padding: 10px;">'
-                    '<h2 style="color: #36b9cc;">Overview</h2>'
-                    '<p><satrong>target</strong>: The polarity of the tweet (0 = negative, 2 = neutral, 4 = positive)</p>'
-                    '<p><strong>ids</strong>: The id of the tweet (2087)</p>'
-                    '<p><strong>date</strong>: The date of the tweet (Sat May 16 23:58:44 UTC 2009)</p>'
-                    '<p><strong>flag</strong>: The query (lyx). If there is no query, then this value is NO_QUERY.</p>'
-                    '<p><strong>user</strong>: The user that tweeted (robotickilldozr)</p>'
-                    '<p><strong>text</strong>: The text of the tweet (Lyx is cool)</p>'
-                    '</div>', unsafe_allow_html=True)
+            nondepressed_tweets_df = pd.read_csv('data/nondepressed_tweets.csv')
+            nondepressed_tweets_df.rename(columns={'tweet': 'text'}, inplace=True)
+            nondepressed_tweets_df['label'] = 1  # Label for non-depressed tweets
+            df = pd.concat([depressed_tweets_df, nondepressed_tweets_df])
 
-    # Add space between columns
-    st.markdown('')
+            # Select only the "text" and "label" columns
+            df = df[['text', 'label']]
 
-    # Right Column (Summary and Boxes)
-    right_column = st.container()
-    with right_column:
-        # Summary
-        st.markdown('<div style="border: 1px solid #9AD8E1; border-radius: 10px; padding: 10px;">'
-                    '<h2 style="color: #36b9cc;">Summary</h2>'
-                    '<p>This section summarizes the key findings and insights from the analysis.</p>'
-                    '</div>', unsafe_allow_html=True)
+        elif dataset_name == "Suicide Text":
+            df = pd.read_csv('data/suicide_text.csv')
+            df.rename(columns={'class': 'label'}, inplace=True)
+            df['label'] = df['label'].map({'suicide': 2, 'non-suicide': 0})
+            df = df[['text', 'label']]
 
-        # Add space between columns
-        st.markdown('')
+        else:
+            st.error("Selected dataset is not recognized.")
+            return pd.DataFrame()  # Return empty DataFrame
 
-        # Create a horizontal layout for boxes
-        col1, col2, col3 = st.columns([1, 1, 1])  # Create 3 columns with equal width
-        with col1:
-            # Box 1
-            # Use the sentiment distribution app here
-            sentiment_distribution_app(df)
-            st.markdown('<div style="border: 1px solid #9AD8E1; border-radius: 10px; padding: 20px;">'
-                        '<h3 style="color: #36b9cc;">Box 1</h3>'
-                        '<p>This is another box with additional information. Make it longer if needed.</p>'
-                        '</div>', unsafe_allow_html=True)
+        return df
 
-        with col2:
-            # Box 2
-            st.markdown('<div style="border: 1px solid #9AD8E1; border-radius: 10px; padding: 20px;">'
-                        '<h3 style="color: #36b9cc;">Box 2</h3>'
-                        '<p>This is a third box with more content. Make it longer if needed.</p>'
-                        '</div>', unsafe_allow_html=True)
+    # Function to display dataset details and visualizations
+    def display_dataset_details(df):
+        st.subheader("Data Preview")
+        st.write(df.head())
+        st.write(df.tail())
 
-        with col3:
-            # Box 3
-            st.markdown('<div style="border: 1px solid #9AD8E1; border-radius: 10px; padding: 20px;">'
-                        '<h3 style="color: #36b9cc;">Box 3</h3>'
-                        '<p>This is a fourth box with even more information. Make it longer if needed.</p>'
-                        '</div>', unsafe_allow_html=True)
+    # Function to display label distribution with corrected sns.countplot usage
+    def display_label_distribution(df):
+        if df is not None and not df.empty:
+            sns.set_style("whitegrid")
+            st.subheader("Sentiment Distribution")
+            fig, ax = plt.subplots(figsize=(8, 4))
+            countplot = sns.countplot(x='label', data=df, hue='label', palette='Set2', ax=ax, legend=False)
+            
+        # Calculate and annotate bars with percentages
+        total = len(df)
+        for p in countplot.patches:
+            height = p.get_height()  # Get the height of each bar
+            percentage = f'{100 * height/total:.1f}%'  # Calculate the percentage
+            ax.text(p.get_x() + p.get_width() / 2., height + 3, f'{height}\n({percentage})', ha="center") 
 
-if __name__ == "__main__":
-    app()
+        st.pyplot(fig)
+
+    # Function to display word length distribution
+    def display_word_length_distribution(df):
+        st.subheader("Word Length Distribution")
+        if 'text' in df.columns:
+            df['word_length'] = df['text'].apply(lambda x: len(str(x).split()))
+            fig, ax = plt.subplots(figsize=(8, 4))
+            sns.histplot(df['word_length'], bins=30, ax=ax)
+            st.pyplot(fig)
+        else:
+            st.write("No text data available for word length distribution.")
+
+    # Function to generate and display word clouds for each label
+    def generate_word_clouds(df):
+        unique_labels = df['label'].unique()
+        for label_value in unique_labels:
+            st.subheader(f"Word Cloud for Label {label_value}")
+            text = " ".join(review for review in df[df['label'] == label_value]['text'] if isinstance(review, str))
+            if text:
+                wordcloud = WordCloud(background_color='white').generate(text)
+                fig, ax = plt.subplots()
+                ax.imshow(wordcloud, interpolation='bilinear')
+                ax.axis("off")
+                st.pyplot(fig)
+            else:
+                st.write(f"No text data available for word cloud for Label {label_value}.")
+
+    # # Sidebar navigation
+    # st.sidebar.title("Sentiment Analysis Dashboard")
+    # page = st.sidebar.selectbox("Select Page", ["Dataset", "Preprocessing", "EDA", "Train and Test", "User Input and Prediction"])
+
+    # Create a navigation bar with links to sections
+    st.markdown(
+        """
+        <style>
+            .navbar {
+                background-color: #000000;
+                padding: 10px;
+                border-radius: 10px;
+            }
+
+            .navbar a {
+                color: white;
+                text-decoration: none;
+                margin-right: 20px;
+                font-weight: bold;
+            }
+
+            .navbar a:hover {
+                text-decoration: underline;
+            }
+        </style>
+        <div class="navbar">
+            <a href="#overview">Overview</a>
+            <a href="#dataset-used">Dataset</a>
+            <a href="#data-preview">Data Preview</a>
+            <a href="#sentiment-distribution">Sentiment Distribution</a>
+            <a href="#word-length">Word Length</a>
+            <a href="#word-clouds">Word Clouds</a>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # Section 1: Dataset
+    st.markdown("<h2 id='dataset-used'>Dataset</h2>", unsafe_allow_html=True)
+    # Add content for the dataset used section here...
+    dataset_names = ["Sentiment 140", "Depressed and Non-Depressed Tweets", "Suicide Text"]
+    selected_dataset = st.selectbox("Select a dataset to view:", dataset_names)
+
+    # Section 2: Overview
+    st.markdown("<h2 id='overview'>Overview</h2>", unsafe_allow_html=True)
+
+    if selected_dataset == "Sentiment 140":
+        st.write("This is the Sentiment 140 dataset. It contains 1,600,000 tweets extracted using the Twitter API. https://www.kaggle.com/datasets/kazanova/sentiment140")
+        # You can add more details or visualizations specific to this dataset.
+
+    elif selected_dataset == "Depressed and Non-Depressed Tweets":
+        st.write("This is a dataset containing data from users on twitter that are depressed and users who are not, extracted using twitter API. https://www.kaggle.com/datasets/hyunkic/twitter-depression-dataset/data")
+        # Add specific information about this dataset.
+
+    elif selected_dataset == "Suicide Text":
+        st.write("The dataset is a collection of posts from the ""SuicideWatch"" and ""depression"" subreddits of the Reddit platform. The posts are collected using Pushshift API. https://www.kaggle.com/datasets/nikhileswarkomati/suicide-watch")
+        # Add specific information about this dataset.
+
+    # Section 3: Data Preview
+    st.markdown("<h2 id='data-preview'>Data Preview</h2>", unsafe_allow_html=True)
+    with st.expander("Data Preview"):
+        df = preprocess_and_load_data(selected_dataset)
+        display_dataset_details(df)
+
+    # Sentiment distribution section
+    st.markdown("<h2 id='sentiment-distribution'>Sentiment Distribution</h2>", unsafe_allow_html=True)
+    display_label_distribution(df)
+
+    # Section 5: Word Length
+    st.markdown("<h2 id='word-length'>Word Length</h2>", unsafe_allow_html=True)
+    display_word_length_distribution(df)
+
+    # Section 6: Word Clouds
+    st.markdown("<h2 id='word-clouds'>Word Clouds</h2>", unsafe_allow_html=True)
+    # Add content for the word clouds section here...
+    # Generate and display word clouds for each label
+    if not df.empty:
+        generate_word_clouds(df)

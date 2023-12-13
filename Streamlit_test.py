@@ -1,64 +1,56 @@
-# import seaborn as sns
-# import streamlit as st
-# import pandas as pd
-# import numpy
-# import matplotlib.pyplot as plt
-# import plost
+import streamlit as st
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from wordcloud import WordCloud
 
-# # hello world ! hi :) how r u? hiii
+# Set the Streamlit app configuration
+st.set_page_config(layout='wide', initial_sidebar_state='expanded')
 
-# st.set_page_config(layout='wide', initial_sidebar_state='expanded')
+# Create a sidebar header
+st.sidebar.header('Dashboard')
 
-# with open('style.css') as f:
-#     st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
-    
-# st.sidebar.header('Dashboard `version 2`')
-# st.sidebar.subheader('Heat map parameter')
-# time_hist_color = st.sidebar.selectbox('Color by', ('temp_min', 'temp_max')) 
+# Define sidebar options
+selected_page = st.sidebar.selectbox("Select a page", ["Data Used", "Preprocessing", "Processed Data", "Twitter Depression Prediction"])
 
-# st.sidebar.subheader('Donut chart parameter')
-# donut_theta = st.sidebar.selectbox('Select data', ('q2', 'q3'))
+# Create a static header
+st.sidebar.markdown(
+    """
+    # Sentiment Analysis Dashboard
+    """
+)
 
-# st.sidebar.subheader('Line chart parameters')
-# plot_data = st.sidebar.multiselect('Select data', ['temp_min', 'temp_max'], ['temp_min', 'temp_max'])
-# plot_height = st.sidebar.slider('Specify plot height', 200, 500, 250)
-# st.sidebar.markdown('''
-# --- 
-# Created with ❤️ by [Data Professor](https://youtube.com/dataprofessor/).
-# ''')
+# Define the main content area
+content = st.empty()
 
+# Create a navigation bar with links to sections
+st.markdown(
+    """
+    <style>
+        .navbar {
+            background-color: #000000;
+            padding: 10px;
+            border-radius: 10px;
+        }
 
-# # Row A
-# st.markdown('### Username: @farringt0n')
-# col1, col2, col3 = st.columns(3)
-# col1.metric("Followers", "113.9K", "0.0K")
-# col2.metric("Tweets analysed", "248 Tweets", "-8%")
-# col3.metric("Humidity", "86%", "4%")
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            margin-right: 20px;
+            font-weight: bold;
+        }
 
-# # Row B
-
-# df = pd.read_csv("/Users/nurfatinaqilah/Documents/streamlit-test/data/user.csv", header=0)
-# val_count  = df['label'].value_counts()
-# fig = plt.figure(figsize=(10,5))
-# sns.barplot(x=val_count.index, y=val_count.values, alpha=0.8)
-# plt.title('Distribution of Sentiments')
-# plt.ylabel('Number of tweets', fontsize=12)
-# plt.xlabel('Sentiment', fontsize=12)
-
-# c1, c2 = st.columns((7,3))
-# with c1:
-#     # Add figure in streamlit app
-#     st.pyplot(fig)
-    
-# # with c2:
-# #     st.markdown('### Donut chart')
-# #     plost.donut_chart(
-# #         data=stocks,
-# #         theta=donut_theta,
-# #         color='company',
-# #         legend='bottom', 
-# #         use_container_width=True)
-
-# # Row C
-# # st.markdown('### Line chart')
-# # st.line_chart(seattle_weather, x = 'date', y = plot_data, height = plot_height)
+        .navbar a:hover {
+            text-decoration: underline;
+        }
+    </style>
+    <div class="navbar">
+        <a href="#overview">Overview</a>
+        <a href="#dataset-used">Dataset Used</a>
+        <a href="#sentiment-distribution">Sentiment Distribution</a>
+        <a href="#word-length">Word Length</a>
+        <a href="#word-clouds">Word Clouds</a>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
