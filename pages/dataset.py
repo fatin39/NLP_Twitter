@@ -8,26 +8,44 @@ def app():
     st.title('Dataset')
     # Function to preprocess and load dataset details
     def preprocess_and_load_data(dataset_name):
+        
         if dataset_name == "Sentiment 140":
-            df = pd.read_csv('data/sentiment_analysis.csv', encoding='ISO-8859-1', names=['label', 'ids', 'date', 'flag', 'user', 'text'])
+            df = pd.read_csv('/Users/nurfatinaqilah/Documents/streamlit-test/data/sentiment_analysis.csv', encoding='ISO-8859-1', names=['label', 'ids', 'date', 'flag', 'user', 'text'])
             df = df[['text', 'label']]
             df['label'] = df['label'].replace(4, 1)
         
         elif dataset_name == "Depressed and Non-Depressed Tweets":
-            depressed_tweets_df = pd.read_csv('data/depressed_tweets.csv')
+            depressed_tweets_df = pd.read_csv('/Users/nurfatinaqilah/Documents/streamlit-test/data/depressed_tweets.csv')
             depressed_tweets_df.rename(columns={'tweet': 'text'}, inplace=True)
-            depressed_tweets_df['label'] = 2  # Label for depressed tweets
+            depressed_tweets_df['label'] = 1  # Label for depressed tweets
 
-            nondepressed_tweets_df = pd.read_csv('data/nondepressed_tweets.csv')
+            nondepressed_tweets_df = pd.read_csv('/Users/nurfatinaqilah/Documents/streamlit-test/data/nondepressed_tweets.csv')
             nondepressed_tweets_df.rename(columns={'tweet': 'text'}, inplace=True)
-            nondepressed_tweets_df['label'] = 1  # Label for non-depressed tweets
+            nondepressed_tweets_df['label'] = 0  # Label for non-depressed tweets
             df = pd.concat([depressed_tweets_df, nondepressed_tweets_df])
 
             # Select only the "text" and "label" columns
             df = df[['text', 'label']]
+            
+        elif dataset_name == "Reddit Depression & SuicideWatch":
+            df = pd.read_csv('/Users/nurfatinaqilah/Documents/streamlit-test/data/reddit_depression_suicidewatch.csv')
+            df = df[['text', 'label']]
+            df['label'] = df['label'].replace({'depression': 1, 'SuicideWatch': 2})
 
+        elif dataset_name == "Reddit Depression Only":
+            df = pd.read_csv('/Users/nurfatinaqilah/Documents/streamlit-test/data/reddit_depression_only.csv')
+            df.rename(columns={'post': 'text'}, inplace=True)
+            df['label'] = 1
+            df = df[['text', 'label']]
+            
+        elif dataset_name == "Reddit Depression Only 2":
+            df = pd.read_csv('/Users/nurfatinaqilah/Documents/streamlit-test/data/reddit_depression_only2.csv')
+            df.rename(columns={'post': 'text'}, inplace=True)
+            df['label'] = 1
+            df = df[['text', 'label']]
+            
         elif dataset_name == "Suicide Text":
-            df = pd.read_csv('data/suicide_text.csv')
+            df = pd.read_csv('/Users/nurfatinaqilah/Documents/streamlit-test/data/suicide_text.csv')
             df.rename(columns={'class': 'label'}, inplace=True)
             df['label'] = df['label'].map({'suicide': 2, 'non-suicide': 0})
             df = df[['text', 'label']]
@@ -87,10 +105,6 @@ def app():
             else:
                 st.write(f"No text data available for word cloud for Label {label_value}.")
 
-    # # Sidebar navigation
-    # st.sidebar.title("Sentiment Analysis Dashboard")
-    # page = st.sidebar.selectbox("Select Page", ["Dataset", "Preprocessing", "EDA", "Train and Test", "User Input and Prediction"])
-
     # Create a navigation bar with links to sections
     st.markdown(
         """
@@ -127,19 +141,34 @@ def app():
     # Section 1: Dataset
     st.markdown("<h2 id='dataset-used'>Dataset</h2>", unsafe_allow_html=True)
     # Add content for the dataset used section here...
-    dataset_names = ["Sentiment 140", "Depressed and Non-Depressed Tweets", "Suicide Text"]
+    dataset_names = ["Sentiment 140", "Depressed and Non-Depressed Tweets", "Reddit Depression & SuicideWatch", "Reddit Depression Only", "Reddit Depression Only 2", "Suicide Text"]
     selected_dataset = st.selectbox("Select a dataset to view:", dataset_names)
 
     # Section 2: Overview
     st.markdown("<h2 id='overview'>Overview</h2>", unsafe_allow_html=True)
 
     if selected_dataset == "Sentiment 140":
-        st.write("This is the Sentiment 140 dataset. It contains 1,600,000 tweets extracted using the Twitter API. https://www.kaggle.com/datasets/kazanova/sentiment140")
-        # You can add more details or visualizations specific to this dataset.
-
+        st.markdown(
+            "This is the Sentiment 140 dataset, which contains 1,600,000 tweets extracted using the Twitter API."
+            "                                                                                                  "
+            "In this analysis, we are only using tweets labeled as '0'. The label '0' represents normal, non-depressed,"
+            "or negative sentiment texts. These texts are crucial for our model to identify and differentiate"
+            "normal/negative sentiment from those indicative of depression. The aim is to train the model to effectively"
+            "distinguish between normal/negative sentiment texts and potentially depressed ones."
+        )
+    
     elif selected_dataset == "Depressed and Non-Depressed Tweets":
         st.write("This is a dataset containing data from users on twitter that are depressed and users who are not, extracted using twitter API. https://www.kaggle.com/datasets/hyunkic/twitter-depression-dataset/data")
         # Add specific information about this dataset.
+
+    elif selected_dataset == "Reddit Depression & SuicideWatch":
+        st.write("This dataset includes posts from Reddit's 'depression' and 'SuicideWatch' forums.")
+    
+    elif selected_dataset == "Reddit Depression Only":
+        st.write("This dataset includes posts from Reddit's 'depression' forum.")
+    
+    elif selected_dataset == "Reddit Depression Only 2":
+        st.write("This dataset includes additional posts from Reddit's 'depression' forum.")
 
     elif selected_dataset == "Suicide Text":
         st.write("The dataset is a collection of posts from the ""SuicideWatch"" and ""depression"" subreddits of the Reddit platform. The posts are collected using Pushshift API. https://www.kaggle.com/datasets/nikhileswarkomati/suicide-watch")

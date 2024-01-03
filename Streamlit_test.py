@@ -3,15 +3,18 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from wordcloud import WordCloud
+import sys
+import os
 
 # Set the Streamlit app configuration
 st.set_page_config(layout='wide', initial_sidebar_state='expanded')
 
-# Create a sidebar header
-st.sidebar.header('Dashboard')
-
-# Define sidebar options
-selected_page = st.sidebar.selectbox("Select a page", ["Data Used", "Preprocessing", "Processed Data", "Twitter Depression Prediction"])
+no_sidebar_style = """
+    <style>
+        div[data-testid="stSidebarNav"] {display: none;}
+    </style>
+"""
+st.markdown(no_sidebar_style, unsafe_allow_html=True)
 
 # Create a static header
 st.sidebar.markdown(
@@ -20,37 +23,22 @@ st.sidebar.markdown(
     """
 )
 
+# Define sidebar options
+selected_page = st.sidebar.selectbox("Select a page", ["Data Used", "Preprocessing", "Processed Data", "Twitter Depression Prediction"])
+
 # Define the main content area
 content = st.empty()
 
-# Create a navigation bar with links to sections
-st.markdown(
-    """
-    <style>
-        .navbar {
-            background-color: #000000;
-            padding: 10px;
-            border-radius: 10px;
-        }
+# Add the 'pages' directory to the Python path
+project_dir = '/Users/nurfatinaqilah/Documents/streamlit-test'
+pages_dir = os.path.join(project_dir, 'pages')
+sys.path.append(pages_dir)
 
-        .navbar a {
-            color: white;
-            text-decoration: none;
-            margin-right: 20px;
-            font-weight: bold;
-        }
+# Import the app function from intro_pages.py
+from dataset import app
+if selected_page == "Data Used":
+    app()
 
-        .navbar a:hover {
-            text-decoration: underline;
-        }
-    </style>
-    <div class="navbar">
-        <a href="#overview">Overview</a>
-        <a href="#dataset-used">Dataset Used</a>
-        <a href="#sentiment-distribution">Sentiment Distribution</a>
-        <a href="#word-length">Word Length</a>
-        <a href="#word-clouds">Word Clouds</a>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+from twitter_interaction import app
+if selected_page == "Twitter Depression Prediction":
+    app()
