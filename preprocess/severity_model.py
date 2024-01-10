@@ -1,36 +1,34 @@
 import pandas as pd
 import torch
 from torch.utils.data import DataLoader, Dataset
-from transformers import DistilBertConfig, DistilBertTokenizer, DistilBertForSequenceClassification, AdamW
+from transformers import DistilBertTokenizer, DistilBertForSequenceClassification, AdamW
 from sklearn.model_selection import train_test_split
+from sklearn.utils.class_weight import compute_class_weight
+import numpy as np
 
-# Define the path to your severity dataset and the pre-trained model
-severity_csv_path = '/Users/nurfatinaqilah/Documents/streamlit-test/dataset/severity_processed.csv'  # Update with your severity dataset path
-model_path = '/Users/nurfatinaqilah/Documents/streamlit-test/dataset/final_distilbert_model'
+# Load the dataset and select the last 20 entries
+csv_file_path = '/Users/nurfatinaqilah/Documents/streamlit-test/dataset/prediction_sentiment_severity.csv'
+df = pd.read_csv(csv_file_path)
 
-# Load the severity dataset
-severity_df = pd.read_csv(severity_csv_path)
+# Filter the dataset to include only texts classified as 'depressed' or 'suicidal'
+df_filtered = df[df['prediction'].isin([1, 2])]
 
+# Map severity labels to numerical values
 label_mapping = {
     "minimum": 0,
     "mild": 1,
     "moderate": 2,
     "severe": 3
 }
-severity_df['label'] = severity_df['label'].map(label_mapping)
+df_filtered.loc[:, 'label'] = df_filtered['label'].map(label_mapping)
 
-# Determine the number of unique severity classes
-num_severity_classes = severity_df['label'].nunique()
-
-# Load tokenizer and model configuration
+# Tokenization and Encoding
 tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased')
-config = DistilBertConfig.from_pretrained(model_path, num_labels=num_severity_classes)
-
-# Create a new DistilBERT model with the updated configuration
-model = DistilBertForSequenceClassification(config)
 
 # Function to tokenize and encode texts
 def tokenize_and_encode(texts):
+    # Convert all inputs to strings
+    texts = [str(text) for text in texts]
     return tokenizer.batch_encode_plus(
         texts,
         add_special_tokens=True,
@@ -40,6 +38,13 @@ def tokenize_and_encode(texts):
         return_attention_mask=True,
         return_tensors='pt'
     )
+
+# Split the dataset
+train_texts, val_texts, train_labels, val_labels = train_test_split(
+    df_filtered['text'], df_filtered['label'], test_size=0.1, random_state=42
+)
+train_encodings = tokenize_and_encode(train_texts.tolist())
+val_encodings = tokenize_and_encode(val_texts.tolist())
 
 # Custom Dataset Class
 class SeverityDataset(Dataset):
@@ -55,29 +60,30 @@ class SeverityDataset(Dataset):
     def __len__(self):
         return len(self.labels)
 
-# Preprocessing and splitting the severity dataset
-train_texts, val_texts, train_labels, val_labels = train_test_split(
-    severity_df['processed_text'], severity_df['label'], test_size=0.1, random_state=42
-)
-train_encodings = tokenize_and_encode(train_texts.tolist())
-val_encodings = tokenize_and_encode(val_texts.tolist())
-
 # Create dataset objects
 train_dataset = SeverityDataset(train_encodings, train_labels.tolist())
 val_dataset = SeverityDataset(val_encodings, val_labels.tolist())
-
-# Define device and move model to device
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model.to(device)
 
 # DataLoader
 train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size=16, shuffle=False)
 
-# Define Loss Function and Optimizer
+# Initialize Model
+model = DistilBertForSequenceClassification.from_pretrained('distilbert-base-uncased', num_labels=4)
+
+# Define the device
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model.to(device)
+
+# Compute class weights
+class_weights = compute_class_weight('balanced', classes=np.unique(train_labels), y=train_labels)
+class_weights_tensor = torch.tensor(class_weights, dtype=torch.float).to(device)
+
+# Loss Function and Optimizer
+criterion = torch.nn.CrossEntropyLoss(weight=class_weights_tensor)
 optimizer = AdamW(model.parameters(), lr=5e-5)
 
-# Fine-tuning Loop
+# Training Loop
 num_epochs = 3
 for epoch in range(num_epochs):
     model.train()
@@ -95,5 +101,5 @@ for epoch in range(num_epochs):
     print(f"Epoch {epoch+1}/{num_epochs} completed.")
 
 # Save the fine-tuned model
-fine_tuned_model_path = '/Users/nurfatinaqilah/Documents/streamlit-test/dataset/fine_tuned_distilbert_model'
+fine_tuned_model_path = '/Users/nurfatinaqilah/Documents/streamlit-test/dataset/fine_tuned_model'
 model.save_pretrained(fine_tuned_model_path)

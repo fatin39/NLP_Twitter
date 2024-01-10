@@ -6,7 +6,7 @@ from wordcloud import WordCloud
 import sys
 import os
 
-# Set the Streamlit app configuration
+# Set the Streamlit app configuration (call it only once at the beginning)
 st.set_page_config(layout='wide', initial_sidebar_state='expanded')
 
 no_sidebar_style = """
@@ -24,7 +24,7 @@ st.sidebar.markdown(
 )
 
 # Define sidebar options
-selected_page = st.sidebar.selectbox("Select a page", ["Data Used", "Preprocessing", "Processed Data", "Twitter Depression Prediction"])
+selected_page = st.sidebar.selectbox("Select a page", ["Data Used", "Preprocessing", "Processed Data", "Analysis", "Twitter Depression Prediction"])
 
 # Define the main content area
 content = st.empty()
@@ -35,10 +35,15 @@ pages_dir = os.path.join(project_dir, 'pages')
 sys.path.append(pages_dir)
 
 # Import the app function from intro_pages.py
-from dataset import app
+from dataset import dataset_app
 if selected_page == "Data Used":
-    app()
+    dataset_app()
 
-from twitter_interaction import app
+from prediction_analysis import prediction_app
+if selected_page == "Analysis":
+    prediction_app()
+
+# Integration of twitter_app
+from twitter_interaction import twitter_app
 if selected_page == "Twitter Depression Prediction":
-    app()
+   twitter_app()

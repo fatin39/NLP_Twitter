@@ -2,23 +2,36 @@ import hashlib
 import sqlite3
 from tweety import Twitter  # Import the tweety library
 
+# Your Twitter credentials
+TWITTER_USERNAME = "Haven39_"
+TWITTER_PASSWORD = "FYPpurposes"
+
 class TwitterUser:
     def __init__(self):
         self.app = Twitter("session")
         self.logged_in_user_info = None
 
-    def login(self, username, password):
-        if not username or not password:
-            raise ValueError("Username and password are required.")
+    # def login(self, username, password):
+    #     if not username or not password:
+    #         raise ValueError("Username and password are required.")
         
+    #     try:
+    #         self.app.sign_in(username, password)
+    #         self.logged_in_user_info = self.app.user
+    #         return True
+    #     except Exception as e:
+    #         print(f"Login failed. Error: {str(e)}")
+    #         return False
+
+    def login(self):
         try:
-            self.app.sign_in(username, password)
+            self.app.login_with_access_token(TWITTER_USERNAME, TWITTER_PASSWORD)
             self.logged_in_user_info = self.app.user
             return True
         except Exception as e:
             print(f"Login failed. Error: {str(e)}")
             return False
-
+        
     def get_user_info(self, target_username):
         return self.app.get_user_info(target_username)
 
