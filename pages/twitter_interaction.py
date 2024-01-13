@@ -2,11 +2,14 @@ import streamlit as st
 from transformers import AutoTokenizer, DistilBertForSequenceClassification, DistilBertTokenizer
 import torch
 import re
-from datetime import datetime
+# from datetime import datetime
 from tweety import Twitter
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 import pandas as pd
+import altair as alt
+from vega_datasets import data
+
 
 # Initialize tokenizer and model
 tokenizer = AutoTokenizer.from_pretrained('distilbert-base-uncased')
@@ -18,9 +21,18 @@ class TwitterUser:
     def __init__(self):
         self.app = Twitter("session")
 
+    # def get_tweets(self, username, pages=1):
+    #     tweets = self.app.get_tweets(username=username, pages=pages)
+    #     return tweets
+    
+    # def get_tweets(self, username, pages=1):
+    #     # Assuming the 'get_tweets' method returns a list of tweet objects
+    #     # and each tweet object has a 'text' attribute and a 'date' attribute
+    #     tweets = self.app.get_tweets(username=username, pages=pages)
+    #     return [{'text': tweet.text, 'date': tweet.date} for tweet in tweets]
     def get_tweets(self, username, pages=1):
-        tweets = self.app.get_tweets(username=username, pages=pages)
-        return tweets
+    # Directly return the list of dictionaries without transforming it
+        return self.app.get_tweets(username=username, pages=pages)
 
 def predict_tweet_sentiment(tweets):
     encodings = tokenizer.batch_encode_plus(
@@ -92,13 +104,6 @@ def expand_contractions(text, c_re=c_re):
         return contractions[match.group(0)]
     return c_re.sub(replace, text)
 
-# # Replace URLs and usernames with placeholder texts (<url> and <user>, respectively).
-# def replace_urls(text):
-#     return re.sub(urlPattern, '<url>', text)
-
-# def replace_usernames(text):
-#     return re.sub(userPattern, '<user>', text)
-
 # Replaces specific emoji patterns with text placeholders (like <smile>, <sadface>, etc.).
 def replace_emojis(text):
     text = re.sub(r'<3', '<heart>', text)
@@ -168,6 +173,18 @@ def clean_tweets(text):
 
 def twitter_app():
     st.title("Twitter Sentiment Analysis")
+    
+    # Sentiment label explanations
+    with st.expander("Sentiment Labels Explained"):
+        st.write("""
+            - **0**: Normal/Negative/Non-Depressed - These tweets are generally neutral or express negative sentiments but are not indicative of depression.
+            - **1**: Depressed - These tweets suggest the user may be experiencing feelings of sadness or depression.
+            - **2**: Suicidal - These tweets indicate that the user might be having suicidal thoughts or severe depression.
+        """)
+    # Initialize 'tweets' to ensure it's in the proper scope
+    tweets = []
+    tweet_objects = []
+    predictions = []  # Initialize predictions
     twitter_user = TwitterUser()
     username = st.text_input('Enter Twitter Username:')
     pages = st.number_input('Number of Tweet Pages to Fetch', min_value=1, value=1, step=1)
@@ -178,35 +195,89 @@ def twitter_app():
     fetch_tweets_button = st.button('Analyze Tweets')
 
     if fetch_tweets_button and username:
-        tweets = twitter_user.get_tweets(username, pages=pages)
-        preprocessed_tweets = [remove_stopwords(preprocess_tweet(tweet.text)) for tweet in tweets]
+        tweet_objects = twitter_user.get_tweets(username, pages=pages)
+        if tweet_objects:
+            # Processing tweets and predictions
+            preprocessed_tweets = [remove_stopwords(preprocess_tweet(tweet['text'])) for tweet in tweet_objects]
+            predictions = predict_tweet_sentiment(preprocessed_tweets)
 
+            # Loop through each tweet and prediction to display them
+            for tweet, prediction in zip(tweet_objects, predictions):
+                formatted_date, tweet_text, sentiment_label, sentiment_color = format_tweet_display(tweet, prediction)
+                # Use columns to organize the output
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.markdown(f"**Date**: {formatted_date}")
+                with col2:
+                    st.markdown(f"**Tweet**: {tweet_text}")
+                with col3:
+                    st.markdown(f"<span style='color: {sentiment_color};'>**Sentiment**: {sentiment_label}</span>", unsafe_allow_html=True)
+
+                st.markdown("---")  # Add a separator
+        
+        preprocessed_tweets = [remove_stopwords(preprocess_tweet(tweet['text'])) for tweet in tweet_objects]
         predictions = predict_tweet_sentiment(preprocessed_tweets)
-        
-        for tweet, prediction in zip(tweets, predictions):
-            formatted_date, tweet_text, sentiment_label, sentiment_color = format_tweet_display(tweet, prediction)
-            
-            # Use columns to organize the output
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.markdown(f"**Date**: {formatted_date}")
-            with col2:
-                st.markdown(f"**Tweet**: {tweet_text}")
-            with col3:
-                st.markdown(f"<span style='color: {sentiment_color};'>**Sentiment**: {sentiment_label}</span>", unsafe_allow_html=True)
 
-            st.markdown("---")  # Add a separator
+        # Create a DataFrame for visualization
+        df_tweets = pd.DataFrame({
+            'text': [tweet['text'] for tweet in tweet_objects],
+            'sentiment': predictions,
+            'date': [tweet['date'] for tweet in tweet_objects]
+        })
         
+        # Organize tweets by sentiment
+        sentiment_tweets = {0: [], 1: [], 2: []}
+        for tweet, pred in zip(preprocessed_tweets, predictions):
+            sentiment_tweets[pred].append(tweet)
+
         if show_visualizations:
-           # Generate and display WordCloud
-            st.subheader("Word Cloud for All Tweets")
-            all_tweets_text = [tweet.text for tweet in tweets]
-            wordcloud = generate_word_cloud(all_tweets_text)
-            plt.figure(figsize=(10, 5))
-            plt.imshow(wordcloud, interpolation='bilinear')
-            plt.axis("off")
-            st.pyplot(plt)
+            for sentiment, tweets in sentiment_tweets.items():
+                if tweets:  # Only generate a word cloud if there are tweets
+                    st.subheader(f"Word Cloud for Sentiment {sentiment}")
+                    wordcloud = generate_word_cloud(tweets)
+                    plt.figure(figsize=(10, 5))
+                    plt.imshow(wordcloud, interpolation='bilinear')
+                    plt.axis("off")
+                    st.pyplot(plt)
+            
+            # Sentiment Distribution Chart
+            # Sort DataFrame by date
+            df_tweets = df_tweets.sort_values('date')
 
+            # Create the point chart for the individual tweets
+            points = alt.Chart(df_tweets).mark_point().encode(
+                x=alt.X('date:T', axis=alt.Axis(format='%Y-%m-%d'), title='Date'),
+                y=alt.Y('sentiment:N', title='Sentiment Label'),
+                color=alt.Color('sentiment:N', legend=alt.Legend(title="Sentiment")),
+                tooltip=['date:T', 'sentiment:N', 'text:N']
+            )
+
+            # Create the line chart to connect points
+            lines = alt.Chart(df_tweets).mark_line().encode(
+                x='date:T',
+                y='sentiment:N',
+                color='sentiment:N'
+            )
+
+            # Combine the charts
+            combined_chart = points + lines
+
+            # Display the chart
+            st.altair_chart(combined_chart, use_container_width=True)
+                
+            import plotly.express as px
+
+            #Sentiment Distribution Chart
+            sentiment_counts = df_tweets['sentiment'].value_counts().reset_index()
+            sentiment_counts.columns = ['sentiment', 'count']
+            sentiment_chart = alt.Chart(sentiment_counts).mark_bar().encode(
+                x=alt.X('sentiment:N', title='Sentiment'),
+                y=alt.Y('count:Q', title='Number of Tweets'),
+                color='sentiment:N',
+                tooltip=['sentiment', 'count']
+            ).interactive()
+            st.altair_chart(sentiment_chart, use_container_width=True)    
+                            
 # The main app execution
 if __name__ == "__main__":
     twitter_app()
