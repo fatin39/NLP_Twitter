@@ -1,2 +1,9 @@
 [theme]
-base="dark"
+primaryColor = "#2C3E50"  # A deep shade of blue, similar to what might be used in professional dashboards
+backgroundColor = "#FFFFFF"  # White background for a clean, airy feel
+secondaryBackgroundColor = "#ECF0F1"  # A very light grey-blue, for a subtle contrast with the white background
+textColor = "#34495E"  # A dark blue color for text, which complements the primary color
+font = "sans serif"  # A generic sans-serif font for a modern look
+
+[sidebar]
+backgroundColor = "#ECF0F1"  # Using the secondary background color for a consistent look

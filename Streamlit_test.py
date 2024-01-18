@@ -24,7 +24,8 @@ st.sidebar.markdown(
 )
 
 # Define sidebar options
-selected_page = st.sidebar.selectbox("Select a page", ["Data Used", "Preprocessing", "Processed Data", "Analysis", "Twitter Depression Prediction"])
+# In Streamlit_test.py, set the default page
+selected_page = st.sidebar.selectbox("Select a page", ["Data Used", "Preprocessing", "Processed Data", "Analysis", "Twitter Depression Prediction"], index=4)  # 4 corresponds to the index of "Twitter Depression Prediction"
 
 # Define the main content area
 content = st.empty()
