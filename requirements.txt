@@ -1,12 +1,10 @@
-# numpy
-# pandas
-# matplot
-# streamlit
-# plost
-# plotly
-# seaborn
-# httpx
-# python-dateutil
-# openpyxl
-# scikit-learn
-# nltk
+streamlit
+pandas
+wordcloud
+matplotlib
+transformers
+torch
+altair
+plotly
+transformers
+tweety
