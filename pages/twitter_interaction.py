@@ -9,8 +9,6 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import altair as alt
 import plotly.express as px
-import lime
-from lime.lime_text import LimeTextExplainer
 from scipy.special import softmax
 
 
