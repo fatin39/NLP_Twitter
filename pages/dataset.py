@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
-import seaborn as sns
 
 def dataset_app():
     st.title('Dataset')

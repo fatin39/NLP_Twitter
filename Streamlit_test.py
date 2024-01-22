@@ -32,20 +32,16 @@ pages_dir = os.path.join(project_dir, 'pages')
 sys.path.append(pages_dir)
 
 # Import the app function from intro_pages.py
-from dataset import dataset_app
+from pages.dataset import dataset_app
 if selected_page == "Data Used":
     dataset_app()
 
-# from prediction_analysis import prediction_app
-# if selected_page == "Analysis":
-#     prediction_app()
-
 # Integration of twitter_app
-from twitter_interaction import twitter_app
+from pages.twitter_interaction import twitter_app
 if selected_page == "Twitter Depression Prediction":
    twitter_app()
    
-from help_insights import help_insights_app
+from pages.help_insights import help_insights_app
 # Call the help_insights_app function when the new page is selected
 if selected_page == "Help and Insights":
     help_insights_app()
