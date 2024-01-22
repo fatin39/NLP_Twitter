@@ -1,6 +1,6 @@
 [theme]
-primaryColor = "#2C3E50"  # A deep shade of blue, similar to what might be used in professional dashboards
-backgroundColor = "#FFFFFF"  # White background for a clean, airy feel
-secondaryBackgroundColor = "#ECF0F1"  # A very light grey-blue, for a subtle contrast with the white background
-textColor = "#34495E"  # A dark blue color for text, which complements the primary color
-font = "sans serif"  # A generic sans-serif font for a modern look
+primaryColor = "#2254C5"
+backgroundColor = "#f8f9fa"
+secondaryBackgroundColor = "#dfe6e9"
+textColor = "#2C3E50"
+font = "sans serif"

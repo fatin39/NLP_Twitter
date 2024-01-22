@@ -335,6 +335,111 @@ def twitter_app():
             # ).properties(title='Tweet Volume Over Time')
             # st.altair_chart(tweet_volume_chart, use_container_width=True)
         
+        # -------------- Sentiment LABEL over time
+        # Sort DataFrame by date
+        # Define sentiment descriptions and color scale
+        sentiment_descriptions = {0: "Normal", 1: "Depressed", 2: "Suicidal"}
+        sentiment_colors = {0: '#1f77b4', 1: '#ff9999', 2: '#d62728'}
+        
+        # Define color scale for sentiments
+        color_scale = alt.Scale(domain=[0, 1, 2], range=['#1f77b4', '#ff9999', '#d62728'])
+        
+        # Convert sentiment to text labels
+        df_tweets['sentiment_label'] = df_tweets['sentiment'].map(sentiment_descriptions)
+
+        # Sort DataFrame by date
+        df_tweets = df_tweets.sort_values('date')
+
+        #Explanation for Label Distribution Over Time
+        with st.expander("Explanation"):
+            st.write("""
+            **This can be used to track the sentiment journey of a Twitter user or the overall mood on specific dates.**
+            
+            Each tweet's sentiment is plotted over time, offering a narrative of the user's emotional journey. 
+            
+            The connected line weaves through these sentiments, providing a visual story. 
+            
+            Patterns here could indicate the onset of a depressive episode or recovery phases.
+            
+            A clustering of points at 'Depressed' or 'Suicidal' with corresponding connecting lines suggests prolonged periods of distress, which could warrant further investigation or intervention.
+""")    
+        # --------------
+        # Sort DataFrame by date
+
+        df_tweets = df_tweets.sort_values('date')
+
+        # Create the point chart for individual tweets
+        points = alt.Chart(df_tweets).mark_point().encode(
+            x=alt.X('date:T', title='Date'),
+            y=alt.Y('sentiment:N', title='Sentiment Label'),
+            #color=alt.Color('sentiment:N', scale=color_scale, legend=alt.Legend(title="Sentiment")),
+            color=alt.Color('sentiment_label:N', legend=alt.Legend(title="Sentiment"),scale=alt.Scale(domain=list(sentiment_descriptions.values()), range=list(sentiment_colors.values()))),
+
+            tooltip=['date:T', 'sentiment:N', 'text:N']
+        ).properties(
+            title='Sentiment Label Over Time'
+        )
+
+        # Create the line chart to connect points in chronological order
+        # The line color is not encoded by sentiment here to ensure a continuous line across different sentiments
+        lines = alt.Chart(df_tweets).mark_line(interpolate='monotone').encode(
+            x='date:T',
+            y='sentiment:N'
+        )
+
+        # Combine the charts to overlay the points on the lines
+        combined_chart = points + lines
+
+        # Add interactive zoom and pan
+        zoom = alt.selection_interval(bind='scales', encodings=['x'])
+
+        # Apply zoom to your chart
+        combined_chart = combined_chart.add_selection(
+            zoom
+        )
+
+        # Display the combined chart
+        st.altair_chart(combined_chart, use_container_width=True)
+
+        # # Convert sentiment to text labels
+        # df_tweets['sentiment_label'] = df_tweets['sentiment'].map(sentiment_descriptions)
+
+        # # Sort sentiments in the order you want them to appear
+        # sort_order = ['Normal', 'Depressed', 'Suicidal']
+        
+        # # Create the point chart for individual tweets
+        # points = alt.Chart(df_tweets).mark_point().encode(
+        #     x=alt.X('date:T', title='Date'),
+        #     y=alt.Y('sentiment_label:N', title='Sentiment Label', sort=sort_order),  # Set the sort order here
+        #     color=alt.Color('sentiment_label:N', legend=alt.Legend(title="Sentiment"),scale=alt.Scale(domain=list(sentiment_descriptions.values()), range=list(sentiment_colors.values()))),
+        #     tooltip=['date:T', 'sentiment_label:N', 'text:N']
+        # ).properties(
+        #     title='Sentiment Label Over Time'
+        # )
+        
+        # # Create the line chart to connect points in chronological order
+        # # Keep the line color neutral to ensure a continuous line across different sentiments
+        # lines = alt.Chart(df_tweets).mark_line(interpolate='monotone').encode(
+        #     x='date:T',
+        #     y='sentiment_label:N', 
+        #     color=alt.value('#d3d3d3')  # Neutral color for the connecting lines
+        # )
+
+        # # Combine the charts to overlay the points on the lines
+        # combined_chart = points + lines
+
+        # # Add interactive zoom and pan
+        # zoom = alt.selection_interval(bind='scales', encodings=['x'])
+
+        # # Apply zoom to your chart
+        # combined_chart = combined_chart.add_params(
+        #     zoom
+        # )
+
+        # # Display the combined chart
+        # st.altair_chart(combined_chart, use_container_width=True)
+
+        
         
         # Sample data preparation
         #Assume df_tweets is your DataFrame and it has 'date' and 'sentiment' columns
@@ -398,63 +503,7 @@ def twitter_app():
             # Display the chart in Streamlit
             st.altair_chart(sentiment_distribution_chart, use_container_width=True)
     
-        # -------------- Sentiment LABEL over time
-        # Sort DataFrame by date
-        # Define sentiment descriptions and color scale
-        sentiment_descriptions = {0: "Normal", 1: "Depressed", 2: "Suicidal"}
-        sentiment_colors = {0: '#1f77b4', 1: '#ff9999', 2: '#d62728'}
-
-        # Convert sentiment to text labels
-        df_tweets['sentiment_label'] = df_tweets['sentiment'].map(sentiment_descriptions)
-
-        # Sort DataFrame by date
-        df_tweets = df_tweets.sort_values('date')
-
-        #Explanation for Label Distribution Over Time
-        with st.expander("Explanation"):
-            st.write("""
-            **This can be used to track the sentiment journey of a Twitter user or the overall mood on specific dates.**
-            
-            Each tweet's sentiment is plotted over time, offering a narrative of the user's emotional journey. 
-            
-            The connected line weaves through these sentiments, providing a visual story. 
-            
-            Patterns here could indicate the onset of a depressive episode or recovery phases.
-            
-            A clustering of points at 'Depressed' or 'Suicidal' with corresponding connecting lines suggests prolonged periods of distress, which could warrant further investigation or intervention.
-""")
-        # Create the point chart for individual tweets
-        points = alt.Chart(df_tweets).mark_point().encode(
-            x=alt.X('date:T', title='Date'),
-            y=alt.Y('sentiment_label:N', title='Sentiment Label'),
-            color=alt.Color('sentiment_label:N', legend=alt.Legend(title="Sentiment"),scale=alt.Scale(domain=list(sentiment_descriptions.values()), range=list(sentiment_colors.values()))),
-            tooltip=['date:T', 'sentiment_label:N', 'text:N']
-        ).properties(
-            title='Sentiment Label Over Time'
-        )
         
-        # Create the line chart to connect points in chronological order
-        # Keep the line color neutral to ensure a continuous line across different sentiments
-        lines = alt.Chart(df_tweets).mark_line(interpolate='monotone').encode(
-            x='date:T',
-            y='sentiment_label:N',
-            color=alt.value('#d3d3d3')  # Neutral color for the connecting lines
-        )
-
-        # Combine the charts to overlay the points on the lines
-        combined_chart = points + lines
-
-        # Add interactive zoom and pan
-        zoom = alt.selection_interval(bind='scales', encodings=['x'])
-
-        # Apply zoom to your chart
-        combined_chart = combined_chart.add_params(
-            zoom
-        )
-
-        # Display the combined chart
-        st.altair_chart(combined_chart, use_container_width=True)
-
         #-------- Tweet Volume Over Time
         #Explanation for Tweet Volume Over Time
         with st.expander("Explanation"):
