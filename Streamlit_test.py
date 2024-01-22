@@ -25,7 +25,7 @@ st.sidebar.markdown(
 
 # Define sidebar options
 # In Streamlit_test.py, set the default page
-selected_page = st.sidebar.selectbox("Select a page", ["Data Used", "Preprocessing", "Processed Data", "Analysis", "Twitter Depression Prediction"], index=4)  # 4 corresponds to the index of "Twitter Depression Prediction"
+selected_page = st.sidebar.selectbox("Select a page", ["Data Used", "Help and Insights", "Twitter Depression Prediction"], index=2)  # 4 corresponds to the index of "Twitter Depression Prediction"
 
 # Define the main content area
 content = st.empty()
@@ -40,11 +40,16 @@ from dataset import dataset_app
 if selected_page == "Data Used":
     dataset_app()
 
-from prediction_analysis import prediction_app
-if selected_page == "Analysis":
-    prediction_app()
+# from prediction_analysis import prediction_app
+# if selected_page == "Analysis":
+#     prediction_app()
 
 # Integration of twitter_app
 from twitter_interaction import twitter_app
 if selected_page == "Twitter Depression Prediction":
    twitter_app()
+   
+from help_insights import help_insights_app
+# Call the help_insights_app function when the new page is selected
+if selected_page == "Help and Insights":
+    help_insights_app()

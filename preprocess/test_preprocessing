@@ -1,0 +1,200 @@
+import pandas as pd
+import os
+
+label_0_path = '/Users/nurfatinaqilah/Documents/streamlit-test/data/label_0.csv'
+
+# Specify the encoding and column names
+# Latin-1, also called ISO-8859-1,
+# is an 8-bit character set endorsed by the International Organization for Standardization (ISO)
+encoding = 'ISO-8859-1'
+
+# Read the CSV file into a DataFrame
+# DataFrame will contain your data with the specified column names and encoding.
+label_0_df = pd.read_csv(label_0_path, encoding = encoding)
+
+# The only data we need
+label_0_df = label_0_df[['text','sentiment']]
+
+# Filter to keep only rows where 'label' is 0 (negative)
+negative_sentiment_df = label_0_df[label_0_df['sentiment'] == 'negative']
+
+negative_sentiment_df['label'] = 0
+
+# The only data we need
+negative_df = negative_sentiment_df[['text','label']]
+
+# print("Sentiment_analysis.csv")
+print(negative_df.head())
+
+# -----
+
+# Add depressed_tweets.csv data
+depressed_tweets_path = '/Users/nurfatinaqilah/Documents/streamlit-test/data/label_1.csv'
+
+# Load the dataset
+# Assuming the tweet text is in a column named 'tweet'
+depressed_tweets_df = pd.read_csv(depressed_tweets_path)
+
+# Filter to keep only rows where 'label' is 0 (negative)
+depressed_df = depressed_tweets_df[depressed_tweets_df['label'] == 1]
+
+# # # First 5 data of the dataset
+print(depressed_df.head())
+
+# ----
+
+suicide_text_path = '/Users/nurfatinaqilah/Documents/streamlit-test/data/suicide_text.csv'
+
+# Load the dataset
+# Assuming the tweet text is in a column named 'tweet'
+suicide_text_df = pd.read_csv(suicide_text_path)
+
+# Map 'class' to a numerical 'label'
+suicide_text_df['label'] = suicide_text_df['class'].map({'suicide': 2, 'non-suicide': 0})
+
+# Select only the 'text' and 'label' columns
+suicide_text_df = suicide_text_df[['text', 'label']]
+
+# Filter to keep only rows where 'label' is 2 (suicide)
+suicidal_text_df = suicide_text_df[suicide_text_df['label'] == 2]
+
+# Display the first few rows to verify
+print(suicidal_text_df.head())
+
+# Combine all datasets into one DataFrame by concatenating them
+df = pd.concat([negative_df, depressed_df, suicidal_text_df])
+
+# Filter and sample 3000 entries for each label
+label_0_sample = df[df['label'] == 0].sample(n=2000, random_state=1)  # Change the random_state for reproducibility
+label_1_sample = df[df['label'] == 1].sample(n=2000, random_state=1)
+label_2_sample = df[df['label'] == 2].sample(n=2000, random_state=1)
+
+# Combine the samples into one DataFrame
+test_df = pd.concat([label_0_sample, label_1_sample, label_2_sample])
+
+# Shuffle the combined DataFrame
+test_df = test_df.sample(frac=1).reset_index(drop=True)
+
+# Display the first few rows to verify
+print(test_df.tail())
+
+# Preprocessing
+import re #RegEx
+import preprocessor as p 
+import nltk 
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+
+# Download the required NLTK data
+nltk.download('stopwords')
+nltk.download('punkt')
+
+# JSON file containing English contractions (like "don't" for "do not") and converting it into a dictionary
+json_file_path = '/Users/nurfatinaqilah/Documents/streamlit-test/data/english_contractions.json'
+contractions = pd.read_json(json_file_path, typ='series').to_dict()
+
+# Compile regular expression patterns
+urlPattern = re.compile(r'https?://\S+|www\.\S+')
+userPattern = re.compile(r'@(\w+)')
+smileemoji = re.compile(r':\)')
+sademoji = re.compile(r':\(')
+neutralemoji = re.compile(r':\|')
+lolemoji = re.compile(r'lol')
+
+# Compile a regular expression pattern for contractions
+c_re = re.compile('(%s)' % '|'.join(contractions.keys()))
+
+# Expands contractions in the text using the contractions dictionary. 
+def expand_contractions(text, c_re=c_re):
+    def replace(match):
+        return contractions[match.group(0)]
+    return c_re.sub(replace, text)
+
+# Replace URLs and usernames with placeholder texts (<url> and <user>, respectively).
+def replace_urls(text):
+    return re.sub(urlPattern, '<url>', text)
+
+def replace_usernames(text):
+    return re.sub(userPattern, '<user>', text)
+
+# Replaces specific emoji patterns with text placeholders (like <smile>, <sadface>, etc.).
+def replace_emojis(text):
+    text = re.sub(r'<3', '<heart>', text)
+    text = re.sub(smileemoji, '<smile>', text)
+    text = re.sub(sademoji, '<sadface>', text)
+    text = re.sub(neutralemoji, '<neutralface>', text)
+    text = re.sub(lolemoji, '<lolface>', text)
+    return text
+
+def remove_punctuation(text):
+    symbols_re = re.compile('[^0-9a-z #+_]')
+    return symbols_re.sub(' ', text)
+
+def remove_non_alphanumeric(text):
+    alphaPattern = re.compile("[^a-z0-9<>]")
+    return re.sub(alphaPattern, ' ', text)
+
+# Adds spaces around slashes to separate words joined by slashes.
+def add_spaces_for_slash(text):
+    return re.sub(r'/', ' / ', text)
+
+# comprehensive function that applies all the above preprocessing steps to a single text entry.
+# To preprocess a single tweet.
+def preprocess_tweet(text):
+    # # Convert tweet to lowercase
+    # text = str(text).lower()
+
+    # Remove URLs
+    text = re.sub(urlPattern, '<url>', text)
+
+    # Remove usernames
+    text = re.sub(userPattern, '<user>', text)
+
+    # Expand contractions
+    text = expand_contractions(text)
+
+    # Remove emojis
+    text = replace_emojis(text)
+
+    # Remove non-alphanumeric characters
+    text = remove_non_alphanumeric(text)
+
+    # Adding space on either side of '/' to separate words (After replacing URLs).
+    text = add_spaces_for_slash(text)
+
+    return text
+
+# removes common words (stopwords) that add little semantic value to the text, using NLTK’s list of English stopwords.
+def remove_stopwords(text):
+    stop_words = set(stopwords.words('english'))
+    word_tokens = nltk.word_tokenize(text)
+    filtered_sentence = [w for w in word_tokens if not w in stop_words]
+    return ' '.join(filtered_sentence)
+
+def clean_tweets(text):
+    cleaned_tweets = []
+    for text in text:
+        # Preprocess the tweet
+        text = preprocess_tweet(text)
+
+        # Remove stopwords
+        text = remove_stopwords(text)
+
+        cleaned_tweets.append(text)
+
+    return cleaned_tweets
+
+# Apply the preprocessing to the 'text' column of the DataFrame
+# This will create a new column 'processed_text' with the cleaned and preprocessed tweets
+# used here as part of a lambda function within df.apply(), allowing it to preprocess each tweet in the DataFrame one by one
+test_df['processed_text'] = test_df['text'].apply(lambda x: remove_stopwords(preprocess_tweet(x)))
+
+
+# # Verify the results
+# print(df[['text', 'processed_text', 'label']].head())
+
+test_df.to_csv('/Users/nurfatinaqilah/Documents/streamlit-test/dataset/testing_dataset_processed.csv', index = False)
+
+# Print the count of each label
+print(test_df['label'].value_counts())
+
