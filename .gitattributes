@@ -1,0 +1,2 @@
+large_data.csv filter=lfs diff=lfs merge=lfs -text
+/Users/nurfatinaqilah/Documents/streamlit-test/data/sentiment_analysis.csv filter=lfs diff=lfs merge=lfs -text
