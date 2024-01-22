@@ -7,3 +7,4 @@ torch
 altair
 plotly
 transformers
+tweety-ns
