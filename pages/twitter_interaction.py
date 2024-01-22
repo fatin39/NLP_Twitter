@@ -9,8 +9,6 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import altair as alt
 import plotly.express as px
-from scipy.special import softmax
-
 
 # Initialize tokenizer and model
 tokenizer = AutoTokenizer.from_pretrained('distilbert-base-uncased')
