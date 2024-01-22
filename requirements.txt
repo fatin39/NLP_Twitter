@@ -7,4 +7,4 @@ torch
 altair
 plotly
 transformers
-tweety-ns
+git+https://github.com/mahrtayyab/tweety/archive/main.zip --upgrade 
