@@ -190,9 +190,12 @@ def twitter_app():
     # Sentiment label explanations
     with st.expander("Sentiment Labels Explained"):
         st.write("""
-            - **0**: Normal/Negative/Non-Depressed - These tweets are generally neutral or express negative sentiments but are not indicative of depression.
-            - **1**: Depressed - These tweets suggest the user may be experiencing feelings of sadness or depression.
-            - **2**: Suicidal - These tweets indicate that the user might be having suicidal thoughts or severe depression.
+            - **0**: Normal/Negative/Non-Depressed 
+                - These tweets are generally neutral or express negative sentiments but are not indicative of depression.
+            - **1**: Depressed 
+                - These tweets suggest the user may be experiencing feelings of sadness or depression.
+            - **2**: Suicidal 
+                - These tweets indicate that the user might be having suicidal thoughts or severe depression.
         """)
     
     tweets = []
